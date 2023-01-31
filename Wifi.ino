@@ -26,44 +26,70 @@ void setupWifi() {
   Serial.println();
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
+ 
 
   connect();
-  SEND();
   
-
-  // read response
-  String response = readResponse();
-  Serial.println("-----------------------");
-  Serial.println(response);
-  // get status code
-  int statusCode = getStatusCode(response);
-  Serial.println("-----------------------");
-  Serial.println(statusCode);
-  if (statusCode == 200) {
-  // success, read body
-  String body = getResponseBody(response);
-  Serial.println("-----------------------");
-  Serial.println(body);
-  // check if at final destination
-    if (!body.equals("undefined")) {
-    destination = body.toInt();
-    }
-  }
-
   calibTimer = millis();
   Connected = true;
+
   
+  Route();
+  SEND();
   cycle();
+
+  
+  // read response
+  
 }
+
+
+
 
 void loopWifi(){}
 
+
+
+
+//Cycle
 void cycle() {
   for (int i = 0; i < 5; i++) {
-    position++;
+    position=routeARR[i];
     delay(2000);
+    Serial.println(position);
+
+Serial.println(readResponse());
     SEND();
   }
+}
+
+
+//Route
+void Route(){
+  Serial.println("getting route...");
+  client.println("GET /api/route/9b447137 HTTP/1.1");
+  //client.println("Host: localhost:8081");
+  //client.println("Connection: close");
+  client.println();
+  client.println();
+  String a=readResponse();
+  String input = getResponseBody(a);
+  Serial.println(input);
+  
+  int count = 0;
+  for (int i=0; i<input.length(); i++){
+    if (isDigit(input[i]) ){
+      routeARR[count]=input[i]-48;
+      count++;
+    }
+  }
+
+  Serial.print("The array is: ");
+  for(int i = 0; i < 5; i++){
+    Serial.print(routeARR[i]);
+  }
+  Serial.println();
+  
 }
 
 //sending responses
@@ -99,7 +125,7 @@ int getStatusCode(String& response) {
   return code.toInt();
 }
   
-String getResponseBody(String& response) {
+String getResponseBody(String response) {
   int split = response.indexOf("\r\n\r\n");
   String body = response.substring(split+4, response.length());
   body.trim();

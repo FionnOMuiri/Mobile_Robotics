@@ -1,5 +1,12 @@
 //Setup
 bool Connected = false;
+int routeARR[5];
+
+//Aswin is cool
+
+//Aswin is super cool!!!
+
+//yeah I am B-)
 
 //Motors
 
@@ -91,11 +98,11 @@ void motorUpdate(int LS, int RS) {
 void sensorUpdate(){
   for(int i = 0; i < 5; i++){
     sensors[i] = analogRead(sensorPins[i]);
-    Serial.print(sensors[i]);
-    Serial.print("   ");
+    //Serial.print(sensors[i]);
+    //Serial.print("   ");
   }
-  Serial.print(centreMin);
-  Serial.println();
+ // Serial.print(centreMin);
+  //Serial.println();
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~SPEED CALCULATION~~~~~~~~~~~~~~~~~~~~
