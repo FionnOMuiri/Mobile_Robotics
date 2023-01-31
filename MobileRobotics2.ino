@@ -1,12 +1,6 @@
 //Setup
 bool Connected = false;
 
-//Aswin is cool
-
-//Aswin is super cool!!!
-
-//yeah I am B-)
-
 //Motors
 
 int motorLPWM = 39; 
