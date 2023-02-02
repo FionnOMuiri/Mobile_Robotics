@@ -1,0 +1,44 @@
+/*
+ Start at 0, start going left
+
+ *01 - if CC turn left at pA, stop at 1
+      if C turn 180, turn left at pA, stop at 1
+ *02 - if CC NO turn, stop at 2
+      if C turn 180, NO turn, stop at 2
+ 03 - do 02, stop at 3
+ 
+ *04 - if CC turn 180, stop at 4
+      if C stop at 4
+ *10 - if CC turn 180, turn right at A, stop at 0
+      if C turn right at A, stop at 0
+ *12 - if CC turn 180, turn left at A, stop at 2
+      if C turn left at A, stop at 2
+ 13 - do 12, stop at 3
+
+ 14 - do 10, stop at 4
+
+ *20 - if CC turn 180, NO turn at pA, stop at 0
+      if C NO turn at pA, stop at 0
+ *21 - if CC turn 180, turn right at pA, stop at 1
+      if C turn right at pA, stop at 1
+ *23 - if CC stop at 3
+      if C turn 180, stop at 3
+ 24 - do 20, stop at 4
+
+ 30 - do 32, do 20
+ 
+ 31 - do 32, do 21
+
+ *32 - if CC do 180, stop at 2
+      if C stop at 2
+ 34 - do 32, do 20, stop at 4
+
+ *40 - if CC stop at 0
+      if C do 180, stop at 0
+ 41 - do 40, do 01
+
+ 42 - do 40, do 02
+
+ 43 - do 40, do 02, stop at 3
+      
+ */
