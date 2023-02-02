@@ -2,12 +2,6 @@
 bool Connected = false;
 int routeARR[5];
 
-//Aswin is cool
-
-//Aswin is super cool!!!
-
-//yeah I am B-)
-
 //Motors
 
 int motorLPWM = 39; 
@@ -18,6 +12,8 @@ int motorMode = 1;
 
 int L = 230;
 int R = 230;
+int LPrev;
+int RPrev;
 
 /*
  * 0 --> Line Follow
@@ -28,12 +24,14 @@ int R = 230;
 //Sensors
 
 int sensors[5] = {0,0,0,0,0};
-int sensorPins[5] = {A8, A9, A11, A13, A14};
+int sensorPins[5] = {A8, A13, A11, A9, A14};
 
 int centreMin = 1000;
 int LMin;
 int RMin;
 int turbo;
+
+int sensorBin;
 
 int pos = 0;
 int checkTimer = 10000000;
@@ -70,7 +68,7 @@ void loop() {
     
     if(motorMode == 0){
       sensorUpdate();
-      speedCalculation();
+      speedCalc2();
       motorUpdate(L, R);
     }
     else if(motorMode == 1){
@@ -96,16 +94,23 @@ void motorUpdate(int LS, int RS) {
 //~~~~~~~~~~~~~~~~~~~~~~SENSOR UPDATE~~~~~~~~~~~~~~~~~~~~~~
 
 void sensorUpdate(){
+  sensorBin = 0;
   for(int i = 0; i < 5; i++){
     sensors[i] = analogRead(sensorPins[i]);
     //Serial.print(sensors[i]);
     //Serial.print("   ");
+    if(sensors[i]<500){
+      sensorBin += pow(2,i);       
+    }
   }
- // Serial.print(centreMin);
+  //Serial.print(sensorBin,BIN);
+  //Serial.print("   ");
   //Serial.println();
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~SPEED CALCULATION~~~~~~~~~~~~~~~~~~~~
+
+//Version 1: Sensor Elevated
 
 void speedCalculation(){
 
@@ -140,6 +145,48 @@ void speedCalculation(){
     checkTimer = millis()+200;
   }
 }
+
+//Version 2: Binary (Sensor Low)
+void speedCalc2(){
+  R = 240;
+  L = 240;
+  switch(sensorBin){
+      //Hard Right
+      case 1:
+        R = 140;
+        break;
+      case 3:
+        R = 160;
+      //Soft Right
+      case 2:
+        R = 210;
+        break;
+      case 6:
+        R = 230;
+      //Straight
+      case 4:
+        break;
+      case 12:
+        L = 230;
+      //Soft Left
+      case 8:
+        L = 210;
+        break;
+      case 24:
+        L = 160;
+      //Hard Right
+      case 16:
+        L = 140;
+        break;
+      //Checkpoint
+      case 31:
+        checkTimer = millis()+200;
+  }
+  //Serial.print(L);
+  //Serial.print("   ");
+  //Serial.println(R);
+}
+
 
 //~~~~~~~~~~~~~~~~~~~~~CALIBRATE~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
