@@ -26,39 +26,28 @@ void setupWifi() {
   Serial.println();
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
- 
 
   connect();
   
   calibTimer = millis();
   Connected = true;
-
   
   Route();
-  SEND();
-  cycle();
-
+  newRoute();
   
-  // read response
-  
+  //SEND();
+  //cycle();
 }
 
-
-
-
 void loopWifi(){}
-
-
-
 
 //Cycle
 void cycle() {
   for (int i = 0; i < 5; i++) {
     position=routeARR[i];
-    delay(2000);
+    delay(500);
     Serial.println(position);
-
-Serial.println(readResponse());
+    Serial.println(readResponse());
     SEND();
   }
 }
@@ -85,7 +74,7 @@ void Route(){
   }
 
   Serial.print("The array is: ");
-  for(int i = 0; i < 5; i++){
+  for(int i = 0; i < 6; i++){
     Serial.print(routeARR[i]);
   }
   Serial.println();
@@ -94,8 +83,12 @@ void Route(){
 
 //sending responses
 void SEND() {
+  Serial.print("Server Communication... ");
+  
   String postBody("position=");
   postBody += position;
+
+  Serial.println(postBody);
   
   client.println("POST /api/arrived/9b447137 HTTP/1.1");
   client.println("Content-Type: application/x-www-form-urlencoded");
