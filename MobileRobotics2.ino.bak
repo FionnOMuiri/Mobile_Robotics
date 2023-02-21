@@ -1,6 +1,6 @@
 //Setup
 bool Connected = false;
-int routeARR[5];
+int routeARR[6] = {9,9,9,9,9,9};
 
 //Motors
 
@@ -12,8 +12,6 @@ int motorMode = 1;
 
 int L = 230;
 int R = 230;
-int LPrev;
-int RPrev;
 
 /*
  * 0 --> Line Follow
@@ -29,11 +27,9 @@ int sensorPins[5] = {A8, A13, A11, A9, A14};
 int centreMin = 1000;
 int LMin;
 int RMin;
-int turbo;
 
 int sensorBin;
 
-int pos = 0;
 int checkTimer = 10000000;
 
 int calibTimer = 0;
@@ -49,14 +45,23 @@ char ssid[] = "NETGEAR63";
 char password[] = "littlecello367";
 WiFiClient client;
 
+
+//Mapping
 int position = 0;
-int destination;
+int dest = 0;
+int orientation = 0; // 0 = CC    1 = C
+int instructionsInt;
+int instructionsArr[8] = {0,0,0,0,0,0,0,0};
+int route = 0;
+int instructionsCt = 0;
+int routeCt = 0;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~SETUP~~~~~~~~~~~~~~~~~~~~~~~~
 
 void setup() {
   Serial.begin(115200);
-  }
+  
+}
 
 //~~~~~~~~~~~~~~~~~~~~~~~~MAIN LOOP~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -99,7 +104,7 @@ void sensorUpdate(){
     sensors[i] = analogRead(sensorPins[i]);
     //Serial.print(sensors[i]);
     //Serial.print("   ");
-    if(sensors[i]<500){
+    if(sensors[i]<650){
       sensorBin += pow(2,i);       
     }
   }
@@ -113,7 +118,6 @@ void sensorUpdate(){
 //Version 1: Sensor Elevated
 
 void speedCalculation(){
-
   L = 238;
   R = 238;
   
@@ -135,11 +139,6 @@ void speedCalculation(){
       L = 220;
     }
   }
-
-  /*if(sensors[2]<turbo){
-    L = 250;
-    R = 250;  
-  }*/
 
   if(sensors[0] < 850 && sensors[4] < 850){
     checkTimer = millis()+200;
@@ -191,36 +190,59 @@ void speedCalc2(){
 //~~~~~~~~~~~~~~~~~~~~~CALIBRATE~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 void calibrate(){
-  if(millis() - calibTimer > 2000 && millis() - calibTimer < 5000){
+  /*if(millis() - calibTimer > 2000 && millis() - calibTimer < 5000){
     if(sensors[2] < centreMin){
       centreMin = sensors[2];
     }  
     //Serial.println(centreMin);
   }
   else if(millis() - calibTimer > 3000){
-    turbo = centreMin + 10;
     LMin = centreMin + 20;
     RMin = centreMin + 20;
     
     motorMode = 0;  
   }
+  */
+  motorMode = 0;
 }
 
 //~~~~~~~~~~~~~~~~~~~~CHECKPOINT~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 void checkpoint(){
-  pos++;
   tone(36,440,100);
-  delay(100);
   motorUpdate(128, 128);
-  delay(1000);
-  if(pos == 3 || pos == 5){
-    turn(90);  
+
+  delay(500);
+
+  if(instructionsArr[instructionsCt] == 0){  
+    delay(1000);
+    newRoute();
+    Serial.print("Position: ");
+    Serial.print(position);
+    Serial.print("  dest: ");
+    Serial.println(dest);
+    instructionsCt = 0;
   }
-  delay(1000);
-  motorUpdate(200, 200);
-  delay(200);
-  motorMode = 0;
+  else if(instructionsArr[instructionsCt] == 1){
+    motorMode = 0;
+    Serial.println("Straight");
+    instructionsCt++;
+  }
+  else if(instructionsArr[instructionsCt] == 2){
+    turn(90);
+    Serial.println("Turn Left");
+    instructionsCt++;
+  }
+  else if(instructionsArr[instructionsCt] == 3){
+    turn(-90);
+    Serial.println("Turn Right");
+    instructionsCt++;
+  }
+  else if(instructionsArr[instructionsCt] == 4){
+    turn(180);
+    Serial.println("Turn 180");
+    instructionsCt++;
+  }
 
   checkTimer = 10000000;
 }
@@ -231,13 +253,48 @@ void turn(int angle){
   //left
   if(angle == 90){
     motorUpdate(58,198);
-    delay(670);
-  } else if(angle == 180){
-    motorUpdate(58,198);
-    delay(1280);
-  } else if(angle == -90){
+    delay(420);
+
+  } 
+  
+  //180
+  else if(angle == 180){
+    if(orientation == 0){
+      motorUpdate(58,198);
+      delay(800);
+      orientation = 1;  
+    } else{
+      motorUpdate(198,58);
+      delay(800);
+      orientation = 0;  
+    }
+  } 
+
+  //right
+  else if(angle == -90){
     motorUpdate(198,58);
-    delay(670); 
+    delay(640); 
   }
+  
   motorUpdate(128,128);
+}
+
+//~~~~~~~~~~~~~~~~~NEW ROUTE~~~~~~~~~~~~~~~~~~~~~~~~~
+
+void newRoute(){
+  if(routeARR[routeCt + 1] < 9){
+    position = routeARR[routeCt];
+    dest = routeARR[routeCt + 1];
+    Serial.println(readResponse());
+    SEND();
+    getRoute();
+    getDir();
+    Serial.print("Directions: ");
+    for(int i = 0; i < 8; i++){
+      Serial.print(instructionsArr[i]);
+    }
+    Serial.println();
+  }
+  else{exit(0);}
+  routeCt++;
 }

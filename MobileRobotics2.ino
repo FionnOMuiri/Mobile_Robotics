@@ -17,6 +17,7 @@ int R = 230;
  * 0 --> Line Follow
  * 1 --> Calibrate
  * 2 --> Checkpoint
+ * 3 --> Checkpoint 5
  */
 
 //Sensors
@@ -29,10 +30,11 @@ int LMin;
 int RMin;
 
 int sensorBin;
-
 int checkTimer = 10000000;
-
 int calibTimer = 0;
+
+int distanceSensorPin = A6;
+int distanceSensor;
 
 //Wifi
 #include <WiFi.h>
@@ -56,11 +58,12 @@ int route = 0;
 int instructionsCt = 0;
 int routeCt = 0;
 
+bool c5 = false;
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~SETUP~~~~~~~~~~~~~~~~~~~~~~~~
 
 void setup() {
-  Serial.begin(115200);
-  
+  Serial.begin(115200); 
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~MAIN LOOP~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,7 +86,25 @@ void loop() {
     else if(motorMode == 2){
       checkpoint();    
     }
+    else if(motorMode == 3){
+      Serial.println("C5 approaching");
+      motorUpdate(255,250);
+      while(distanceSensor < 500){//720
+        distanceUpdate();
+        Serial.println(distanceSensor);
+      }  
+      motorUpdate(128,128);
+      Serial.println("C5 reached");
+      SEND();
+      delay(200);
+      Serial.println(readResponse());
+      delay(5000);
+      exit(0);
+    }
   }
+  //distanceUpdate();
+  //Serial.println(distanceSensor);
+  //delay(10);
 } 
 
 //~~~~~~~~~~~~~~~~~~~~~~MOTOR UPDATE~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,7 +130,6 @@ void sensorUpdate(){
     }
   }
   //Serial.print(sensorBin,BIN);
-  //Serial.print("   ");
   //Serial.println();
 }
 
@@ -179,7 +199,7 @@ void speedCalc2(){
         break;
       //Checkpoint
       case 31:
-        checkTimer = millis()+200;
+        checkTimer = millis()+150;
   }
   //Serial.print(L);
   //Serial.print("   ");
@@ -211,12 +231,16 @@ void calibrate(){
 void checkpoint(){
   tone(36,440,100);
   motorUpdate(128, 128);
-
-  delay(500);
-
+  
   if(instructionsArr[instructionsCt] == 0){  
-    delay(1000);
+    Serial.println("Destination reached");
+    delay(300);
+  
     newRoute();
+
+    SEND();
+    Serial.println(readResponse());
+    
     Serial.print("Position: ");
     Serial.print(position);
     Serial.print("  dest: ");
@@ -243,7 +267,7 @@ void checkpoint(){
     Serial.println("Turn 180");
     instructionsCt++;
   }
-
+  
   checkTimer = 10000000;
 }
 
@@ -252,28 +276,60 @@ void checkpoint(){
 void turn(int angle){
   //left
   if(angle == 90){
-    motorUpdate(58,198);
-    delay(420);
-
+    motorUpdate(70,186);
+    delay(300);
+    sensorUpdate(); 
+    while(sensorBin != 4){// && sensorBin != 12 && sensorBin != 6){
+      sensorUpdate(); 
+    }
+    if(position == 1){
+      orientation = 0;  
+    }
   } 
   
   //180
   else if(angle == 180){
     if(orientation == 0){
-      motorUpdate(58,198);
-      delay(800);
+      motorUpdate(70,186);
+      delay(300);
+      sensorUpdate(); 
+      while(sensorBin != 4){// && sensorBin != 12 && sensorBin != 6){
+        sensorUpdate();  
+      }
+      delay(300);
+      sensorUpdate(); 
+      while(sensorBin != 4){// && sensorBin != 12 && sensorBin != 6){
+        sensorUpdate();  
+      }
       orientation = 1;  
     } else{
-      motorUpdate(198,58);
-      delay(800);
+      motorUpdate(186,70);
+      delay(300);
+      sensorUpdate(); 
+      while(sensorBin != 4){// && sensorBin != 12 && sensorBin != 6){
+        sensorUpdate();  
+      }
+      delay(300);
+      sensorUpdate(); 
+      while(sensorBin != 4){// && sensorBin != 12 && sensorBin != 6){
+        sensorUpdate();  
+      }
+      
       orientation = 0;  
     }
   } 
 
   //right
   else if(angle == -90){
-    motorUpdate(198,58);
-    delay(640); 
+    motorUpdate(186,70);
+    delay(300);
+    sensorUpdate(); 
+    while(sensorBin != 4){// && sensorBin != 12 && sensorBin != 6){
+      sensorUpdate();  
+    }
+    if(position == 1){
+      orientation = 1;  
+    }
   }
   
   motorUpdate(128,128);
@@ -285,8 +341,7 @@ void newRoute(){
   if(routeARR[routeCt + 1] < 9){
     position = routeARR[routeCt];
     dest = routeARR[routeCt + 1];
-    Serial.println(readResponse());
-    SEND();
+    
     getRoute();
     getDir();
     Serial.print("Directions: ");
@@ -294,7 +349,31 @@ void newRoute(){
       Serial.print(instructionsArr[i]);
     }
     Serial.println();
+    Serial.println();
   }
-  else{exit(0);}
+  else if(c5){
+    motorMode = 3;
+    Serial.println("Full Speed Ahead!");
+    position = 5;  
+  }
+  else{
+    SEND();
+    delay(200);
+    Serial.println(readResponse());
+    delay(5000);
+    exit(0);
+  }
   routeCt++;
+}
+
+//~~~~~~~~~~~~~~~~DISTANCE SENSOR~~~~~~~~~~~~~~~~~~~
+
+void distanceUpdate(){
+  int input;
+  int distanceSensorSmooth;
+
+  input = analogRead(distanceSensorPin);
+
+  distanceSensorSmooth = (input * 0.4) + (distanceSensor * 0.6);
+  distanceSensor = distanceSensorSmooth;
 }
